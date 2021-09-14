@@ -1,5 +1,5 @@
 # teaching-with-vector
-Teacher assistant bot for Anki Vector with personalized et auto-generated dataset from distance learning courses.
+Teacher assistant bot for Anki Vector with personalized and auto-generated dataset from distance learning courses audio files.
 
 **Developed for** the *Gentiane Venture's laboratory* of *Tokyo University of Agriculture and Technology*  
 **Authors :** *Bastien Muraccioli*  
