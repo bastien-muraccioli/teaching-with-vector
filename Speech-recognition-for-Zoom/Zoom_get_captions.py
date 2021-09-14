@@ -12,7 +12,7 @@ Release date : August 2021
 import os
 import glob
 import time
-
+from shutil import copy
 import speech_recognition as sr
 from pydub import AudioSegment
 from pydub.silence import split_on_silence
@@ -31,49 +31,52 @@ def m4a_to_flac(PATH='C:/Users/'+os.getlogin()+'/Documents/Zoom' ):
             sound = sound.set_channels(1)
             sound.export(ogg_file, format="flac")
             os.remove(m4a_file)
+        print('End of m4a conversion')
         return 1
     else:
         print('No .m4a files found')
         return -1
 
-# a function that splits the audio file into chunks
-# and applies speech recognition
-def silence_based_conversion(PATH='C:/Users/'+os.getlogin()+'/Documents/Zoom', LANGUAGE="en-US"):
+# Split long audio files into chunks and use speech recognition to write captions
+# The default path is the Zoom Meeting recordings folder path on Windows
+def long_speech_conversion(PATH='C:/Users/'+os.getlogin()+'/Documents/Zoom', LANGUAGE="en-US"):
     flac_files = glob.glob(PATH + '/*/*.flac')
     if flac_files:
+        nb_error = 0
+        nb_chunk = 0
         for flac_file in flac_files:
             # open the audio file stored in the PATH
             sound = AudioSegment.from_file(flac_file)
             fh = open(os.path.splitext(flac_file)[0] + '.txt', "w+", encoding="utf-8")
             tic = time.perf_counter()
-            # split track where silence is 0.5 seconds
-            # or more and get chunks
             # you can adjust this per requirements
             chunks = split_on_silence(sound,
-                                      min_silence_len=500,
+                                      min_silence_len=500,          # wait for 500ms silence to split
                                       silence_thresh=sound.dBFS-14, #mean audio level - 14 dBFS
-                                      keep_silence=500 #leave some silence at the beginning and end of the chunks
+                                      keep_silence=500              #silence at the beginning and the end of the chunk
                                       )
-            # create a directory to store the audio chunks
+            # create a directory to store the chunks
             try:
                 os.mkdir('audio_chunks')
             except(FileExistsError):
                 pass
-            # move into the directory to store the audio files
+            # move into the directory to store the chunks
             os.chdir('audio_chunks')
-            i = 0
+
             # process each chunk for speech recognition
+            i = 0
             for audio_chunk in chunks:
+                nb_chunk += 1
                 # export audio chunk and save it in the current directory.
                 print("saving chunk{0}.flac".format(i))
                 audio_chunk.export("./chunk{0}.flac".format(i), format="flac")
-                # # the name of the newly created chunk
+                # the name of the newly created chunk
                 filename = 'chunk' + str(i) + '.flac'
-                #print("Processing chunk " + str(i))
+                # print("Processing chunk " + str(i))
                 # get the name of the newly created chunk
                 # in the AUDIO_FILE variable for later use.
                 file = filename
-                # # create a speech recognition object
+                # create a speech recognition object
                 r = sr.Recognizer()
                 # recognize the chunk
                 with sr.AudioFile(file) as source:
@@ -87,6 +90,7 @@ def silence_based_conversion(PATH='C:/Users/'+os.getlogin()+'/Documents/Zoom', L
                     fh.write(rec + " ")
                 # catch any errors.
                 except sr.UnknownValueError as e:
+                    nb_error += 1
                     print("Error:", str(e))
                 except sr.RequestError as e:
                     print("Could not request results. check your internet connection")
@@ -98,13 +102,29 @@ def silence_based_conversion(PATH='C:/Users/'+os.getlogin()+'/Documents/Zoom', L
             print('saving ' + os.path.splitext(flac_file)[0] + '.txt')
             toc = time.perf_counter()
             print(f"Audio convert in {toc - tic:0.4f} seconds")
+            print("Percent of unrecognized speech: ", (nb_error/nb_chunk)*100, '%')
             # uncomment if you want to delete zoom audio file to release space
             # os.remove(flac_file)
+
+        # Copy all captions texts to 'all' folder used by Sensei assistant
+        text_files = glob.glob(PATH + '/*/*.txt')
+        if not text_files:
+            print('No text file found')
+        else:
+            for text_file in text_files:
+                copy(text_file, '../Dataset/all')
+                # uncomment if you want to delete text files from the PATH
+                # os.remove(text_file)
         return 1
     else:
         print('No .flac files found')
         return -1
 
 if __name__ == "__main__":
-    print(m4a_to_flac())
-    silence_based_conversion()
+    # default used path: 'C:/Users/NAME/Documents/Zoom'
+    # Convert m4a files to flac,
+    m4a_to_flac()
+    # Convert long audio files to captions and extract them to Dataset/all
+    long_speech_conversion()
+
+

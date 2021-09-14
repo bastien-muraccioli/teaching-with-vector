@@ -58,7 +58,7 @@ The alternative is to use RetriBERT model as retriever instead of the Dense Pass
   
   or manual installation :
   - pip install haystack
-  - pip install speech-recognition
+  - pip install SpeechRecognition
   - pip install pyaudio
   - pip install pydub
   - pip install anki-vector
