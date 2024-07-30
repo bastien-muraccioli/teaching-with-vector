@@ -38,7 +38,7 @@ gitdb==4.0.7
 GitPython==3.1.18
 googleapis-common-protos==1.53.0
 greenlet==1.1.1
-grpcio==1.37.1
+grpcio==1.53.2
 grpcio-tools==1.37.1
 gunicorn==22.0.0
 h11==0.12.0
